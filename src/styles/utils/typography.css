@@ -1,0 +1,93 @@
+.pulse-component h1,
+.pulse-component h2,
+.pulse-component h3,
+.pulse-component h4,
+.pulse-component h5,
+.pulse-text-display {
+  font-weight: var(--pulse-font-weight-bold);
+  font-family: 'FS Me';
+  margin: 0;
+}
+
+.pulse-component h1 {
+  font-size: var(--pulse-font-size-xxxlarge);
+}
+
+.pulse-component h2 {
+  font-size: var(--pulse-font-size-xxlarge);
+}
+
+.pulse-component h3 {
+  font-size: var(--pulse-font-size-xlarge);
+}
+
+.pulse-component h4 {
+  font-size: var(--pulse-font-size-large);
+}
+
+.pulse-component h5 {
+  font-size: var(--pulse-font-size-regular);
+}
+
+.pulse-text-display {
+  font-size: var(--pulse-font-size-display);
+}
+
+.pulse-text-caption-small {
+  font-size: var(--pulse-font-size-caption-small);
+  font-weight: var(--pulse-font-weight-regular);
+}
+
+.pulse-text-caption {
+  font-size: var(--pulse-font-size-caption-regular);
+  font-weight: var(--pulse-font-weight-regular);
+}
+
+.pulse-text-body-small,
+.pulse-text-body-regular,
+.pulse-text-body-large,
+.pulse-text-caption-strong,
+.pulse-text-body-small-strong,
+.pulse-text-body-regular-strong,
+.pulse-text-body-large-strong,
+.pulse-component,
+.p-component {
+  font-family: Inter;
+  color: var(--pulse-color-neutral-120);
+  margin: 0;
+}
+
+.pulse-text-body-small {
+  font-size: var(--pulse-font-size-small);
+  font-weight: var(--pulse-font-weight-regular);
+}
+
+.pulse-text-body-regular {
+  font-size: var(--pulse-font-size-regular);
+  font-weight: var(--pulse-font-weight-regular);
+}
+
+.pulse-text-body-large {
+  font-size: var(--pulse-font-size-large);
+  font-weight: var(--pulse-font-weight-regular);
+}
+
+.pulse-text-caption-strong {
+  font-size: var(--pulse-font-size-caption-regular);
+  font-weight: var(--pulse-font-weight-strong);
+}
+
+.pulse-text-body-small-strong {
+  font-size: var(--pulse-font-size-small);
+  font-weight: var(--pulse-font-weight-strong);
+}
+
+.pulse-text-body-regular-strong {
+  font-size: var(--pulse-font-size-regular);
+  font-weight: var(--pulse-font-weight-strong);
+}
+
+.pulse-text-body-large-strong {
+  font-size: var(--pulse-font-size-large);
+  font-weight: var(--pulse-font-weight-strong);
+}

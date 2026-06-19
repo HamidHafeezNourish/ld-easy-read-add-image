@@ -1,0 +1,32 @@
+.pulse-drag-and-drop-tile {
+  display: flex;
+  flex-direction: column;
+  border-radius: 8px;
+  background: var(--pulse-color-neutral-10);
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+.pulse-drag-and-drop-tile-label {
+  margin-top: 0;
+  font-size: var(--pulse-font-size-caption-small);
+  color: var(--pulse-color-neutral-100);
+}
+
+.pulse-drag-and-drop-tile-index {
+  margin-right: var(--pulse-space-3xs);
+}
+
+.pulse-drag-and-drop-tile-title {
+  font-size: var(--pulse-font-size-regular);
+  font-weight: var(--pulse-font-weight-strong);
+  color: var(--pulse-color-primary-100);
+}
+
+.pulse-drag-and-drop-tile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--pulse-space-2xs);
+}

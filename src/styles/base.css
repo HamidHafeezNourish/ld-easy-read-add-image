@@ -1,0 +1,8 @@
+.pulse-component {
+  box-sizing: border-box;
+}
+
+.pulse-layout {
+  height: 100%;
+  width: 100%;
+}

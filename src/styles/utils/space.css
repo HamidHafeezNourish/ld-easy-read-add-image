@@ -1,0 +1,5 @@
+:root {
+  --pulse-layout-top-margin: var(--pulse-space-m-l);
+  --pulse-padding: var(--pulse-space-s-m);
+  --pulse-gap: var(--pulse-space-s-m);
+}

@@ -1,0 +1,16 @@
+:root {
+  --pulse-font-size-caption-small: clamp(11px, 10.6667px + 0.0926vw, 12px);
+  --pulse-font-size-caption-regular: clamp(12px, 11.3333px + 0.1852vw, 14px);
+  --pulse-font-size-small: clamp(15px, 14.7143px + 0.0893vw, 16px);
+  --pulse-font-size-regular: clamp(16px, 15.4286px + 0.1786vw, 18px);
+  --pulse-font-size-large: clamp(18px, 17.4286px + 0.1786vw, 20px);
+  --pulse-font-size-xlarge: clamp(20px, 18.8571px + 0.3571vw, 24px);
+  --pulse-font-size-xxlarge: clamp(24px, 21.7143px + 0.7143vw, 32px);
+  --pulse-font-size-xxxlarge: clamp(28px, 24.5714px + 1.0714vw, 40px);
+  --pulse-font-size-display: clamp(32px, 27.4286px + 1.4286vw, 48px);
+
+  --pulse-font-weight-light: 300;
+  --pulse-font-weight-regular: 400;
+  --pulse-font-weight-strong: 500;
+  --pulse-font-weight-bold: 700;
+}
