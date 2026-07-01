@@ -1,27 +1,29 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import PulseIcon from '@/components/PulseIcon/PulseIcon.vue'
 import PulseButton from '@/components/PulseButton/PulseButton.vue'
+import PulseIcon from '@/components/PulseIcon/PulseIcon.vue'
 import PulseTag from '@/components/PulseTag/PulseTag.vue'
 import avatarSarah from '../assets/avatar-sarah.png'
 import iconPencil from '../assets/icon-pencil.png'
 
-type Section = 'home' | 'gallery' | 'domain'
+type Section = 'home' | 'gallery' | 'domain' | 'easy-read'
 
 const props = defineProps<{
   activeSection: Section
   galleryCount: number
   easyRead?: boolean
   selectedDomainId?: string
+  recommendationsCount?: number
 }>()
 
 const emit = defineEmits<{
   navigate: [section: Section]
   'domain-click': [domainId: string]
   'toggle-easy-read': []
+  'show-recommendations': []
 }>()
 
-const expandedSections = ref(new Set<string>(['care-plan-section']))
+const expandedSections = ref(new Set<string>(['care-plan']))
 
 function toggleSection(id: string) {
   if (expandedSections.value.has(id)) expandedSections.value.delete(id)
@@ -29,25 +31,42 @@ function toggleSection(id: string) {
 }
 
 const careDomains = [
-  { id: 'behaviour', label: 'Behaviour' },
-  { id: 'cognition', label: 'Cognition and Mental Capacity' },
+  { id: 'behaviour',     label: 'Behaviour' },
+  { id: 'cognition',     label: 'Cognition and Mental Capacity' },
   { id: 'communication', label: 'Communication' },
-  { id: 'continence', label: 'Continence' },
-  { id: 'cultural', label: 'Cultural, Religious & Spiritual Identity' },
-  { id: 'daily-living', label: 'Daily Living and Environment' },
-  { id: 'education', label: 'Education & Employment' },
-  { id: 'medication', label: 'Medication & Healthcare' },
+  { id: 'continence',    label: 'Continence' },
+  { id: 'cultural',      label: 'Cultural, Religious & Spiritual Identity' },
+  { id: 'daily-living',  label: 'Daily Living and Environment' },
+  { id: 'education',     label: 'Education & Employment' },
+  { id: 'medication',    label: 'Medication & Healthcare' },
   { id: 'mental-health', label: 'Mental Health' },
-  { id: 'mobility', label: 'Mobility & Physical' },
-  { id: 'nutrition', label: 'Nutrition & Hydration' },
+  { id: 'mobility',      label: 'Mobility & Physical' },
+  { id: 'nutrition',     label: 'Nutrition & Hydration' },
   { id: 'personal-care', label: 'Personal Care & Hygiene' },
-  { id: 'sensory', label: 'Sensory' },
-  { id: 'sexuality', label: 'Sexuality & Relationships' },
-  { id: 'skin', label: 'Skin Integrity' },
-  { id: 'sleep', label: 'Sleep & Rest' },
-  { id: 'social', label: 'Social, Community & Recreation' },
-  { id: 'ltc', label: 'Specific Diagnoses & LTCs' },
+  { id: 'sensory',       label: 'Sensory' },
+  { id: 'sexuality',     label: 'Sexuality & Relationships' },
+  { id: 'skin',          label: 'Skin Integrity' },
+  { id: 'sleep',         label: 'Sleep & Rest' },
+  { id: 'social',        label: 'Social, Community & Recreation' },
+  { id: 'ltc',           label: 'Specific Diagnoses & LTCs' },
 ]
+
+const nutritionNeeds = [
+  'General Nutrition',
+  'General Nutrition and Hydration',
+  'Dysphagia / Swallowing',
+  'Food Allergies',
+  'Enteral Feeding',
+  'Weight Management',
+]
+const activeNutritionNeed = ref('Food Allergies')
+
+const easyReadItems = [
+  { id: 'general-nutrition', label: 'General Nutrition' },
+  { id: 'communication',     label: 'Communication' },
+  { id: 'mobility',          label: 'Mobility' },
+]
+const activeEasyReadId = ref('general-nutrition')
 </script>
 
 <template>
@@ -87,133 +106,171 @@ const careDomains = [
 
       <!-- ── Text sidebar ── -->
       <aside class="shell__sidebar">
-        <!-- Top actions -->
-        <div class="shell__sidebar-actions">
-          <button class="shell__add-btn">
-            <PulseIcon icon="plus" size="small" />
-            Add
-          </button>
-          <button class="shell__icon-btn" title="Edit">
-            <img :src="iconPencil" alt="Edit" class="shell__pencil-icon" />
-          </button>
-        </div>
 
-        <hr class="shell__divider" />
-
-        <!-- Quick links -->
-        <div class="shell__sidenav">
-          <button class="shell__nav-item">
-            <span class="shell__nav-label">Recommendations</span>
-            <span class="shell__badge--red">3</span>
-          </button>
-          <button class="shell__nav-item">
-            <span class="shell__nav-label">Archived</span>
-          </button>
-        </div>
-
-        <hr class="shell__divider" />
-
-        <!-- Bookmarks -->
-        <div class="shell__sidenav">
-          <button class="shell__nav-item shell__nav-item--section" @click="toggleSection('bookmarks')">
-            <span class="shell__caret" :class="{ 'shell__caret--open': expandedSections.has('bookmarks') }">›</span>
-            <span class="shell__nav-label shell__nav-label--bold">Bookmarks</span>
-          </button>
-
-          <!-- Care Plan Section (active/highlighted) -->
-          <button class="shell__nav-item shell__nav-item--section shell__nav-item--active-section" @click="toggleSection('care-plan-section')">
-            <span class="shell__caret shell__caret--open">›</span>
-            <PulseIcon icon="document" size="small" class="shell__nav-section-icon" />
-            <span class="shell__nav-label shell__nav-label--bold">Care plan Section</span>
-          </button>
-
-          <!-- Domain items -->
-          <template v-if="expandedSections.has('care-plan-section')">
-            <button
-              v-for="domain in careDomains"
-              :key="domain.id"
-              class="shell__nav-item shell__nav-item--child"
-              :class="{ 'shell__nav-item--active': selectedDomainId === domain.id && activeSection === 'domain' }"
-              @click="emit('domain-click', domain.id)"
-            >
-              <span class="shell__caret shell__caret--sm">›</span>
-              <PulseIcon icon="document" size="small" class="shell__nav-child-icon" />
-              <span class="shell__nav-label">{{ domain.label }}</span>
-            </button>
-          </template>
-
-          <!-- Consent Forms -->
-          <button class="shell__nav-item shell__nav-item--section" @click="toggleSection('consent')">
-            <span class="shell__caret shell__caret--open">›</span>
-            <PulseIcon icon="document" size="small" class="shell__nav-section-icon" />
-            <span class="shell__nav-label shell__nav-label--bold">Consent Forms</span>
-          </button>
-          <template v-if="expandedSections.has('consent')">
-            <button class="shell__nav-item shell__nav-item--child shell__nav-item--dot">
-              <span class="shell__dot">•</span>
-              <span class="shell__nav-label">Risk Assessments</span>
-            </button>
-            <button class="shell__nav-item shell__nav-item--child shell__nav-item--dot">
-              <span class="shell__dot">•</span>
-              <span class="shell__nav-label">Referral documentation</span>
-            </button>
-            <button class="shell__nav-item shell__nav-item--child shell__nav-item--dot">
-              <span class="shell__dot">•</span>
-              <span class="shell__nav-label">Patient education materials</span>
-            </button>
-          </template>
-
-          <!-- Insurance Information -->
-          <button class="shell__nav-item shell__nav-item--section">
-            <span class="shell__caret">›</span>
-            <PulseIcon icon="connect" size="small" class="shell__nav-section-icon" />
-            <span class="shell__nav-label shell__nav-label--bold">Insurance Information</span>
-          </button>
-
-          <!-- Support group -->
-          <button class="shell__nav-item shell__nav-item--section" @click="toggleSection('support')">
-            <span class="shell__caret" :class="{ 'shell__caret--open': expandedSections.has('support') }">›</span>
-            <PulseIcon icon="connect" size="small" class="shell__nav-section-icon" />
-            <span class="shell__nav-label shell__nav-label--bold">Support group</span>
-          </button>
-          <template v-if="expandedSections.has('support')">
-            <button class="shell__nav-item shell__nav-item--child shell__nav-item--dot">
-              <span class="shell__dot">•</span>
-              <span class="shell__nav-label">Clinical trials information</span>
-            </button>
-          </template>
-
-          <!-- Personal interactions -->
-          <button class="shell__nav-item shell__nav-item--section">
-            <span class="shell__caret">›</span>
-            <PulseIcon icon="account" size="small" class="shell__nav-section-icon" />
-            <span class="shell__nav-label shell__nav-label--bold">Personal interactions</span>
-          </button>
-
-          <!-- Image Gallery -->
-          <hr class="shell__divider shell__divider--sm" />
-          <button
-            class="shell__nav-item"
-            :class="{ 'shell__nav-item--active': activeSection === 'gallery' }"
-            @click="emit('navigate', 'gallery')"
-          >
-            <PulseIcon icon="document" size="small" class="shell__nav-section-icon" />
-            <span class="shell__nav-label">Image Gallery</span>
-            <span class="shell__count">{{ galleryCount }}</span>
-          </button>
-
-          <!-- Back to hub -->
-          <div v-if="activeSection !== 'home'" class="shell__back-wrap">
+        <!-- Top actions: differs by section -->
+        <template v-if="activeSection === 'domain'">
+          <!-- Domain page: Back to Care Plan Hub button, right-aligned -->
+          <div class="shell__sidebar-actions shell__sidebar-actions--end">
             <PulseButton
               label="Back to Care Plan Hub"
               type="secondary"
               icon="previous"
               :small="true"
-              :full-width="true"
               @click="emit('navigate', 'home')"
             />
           </div>
-        </div>
+        </template>
+        <template v-else-if="activeSection === 'easy-read'">
+          <!-- Easy Read page: Back to Care Plan button, right-aligned -->
+          <div class="shell__sidebar-actions shell__sidebar-actions--end">
+            <PulseButton
+              label="Back to Care Plan"
+              type="secondary"
+              icon="previous"
+              :small="true"
+              @click="emit('navigate', 'home')"
+            />
+          </div>
+        </template>
+        <template v-else>
+          <!-- Hub page: Add Item + pencil icon -->
+          <div class="shell__sidebar-actions">
+            <button class="shell__add-btn">Add Item</button>
+            <button class="shell__icon-btn" title="Edit">
+              <img :src="iconPencil" alt="Edit" class="shell__pencil-icon" />
+            </button>
+          </div>
+        </template>
+
+        <hr class="shell__divider" />
+
+        <!-- ── Easy Read mode ── -->
+        <template v-if="activeSection === 'easy-read'">
+
+          <!-- Recommendations at the top — only when easy reads have been edited -->
+          <template v-if="props.recommendationsCount && props.recommendationsCount > 0">
+            <nav class="shell__sidenav">
+              <button class="shell__nav-item" @click="emit('show-recommendations')">
+                <span class="shell__nav-label">Recommendations</span>
+                <span class="shell__badge--orange">{{ props.recommendationsCount }}</span>
+              </button>
+            </nav>
+            <hr class="shell__divider" />
+          </template>
+
+          <!-- Easy read page items -->
+          <nav class="shell__sidenav">
+            <button
+              v-for="item in easyReadItems"
+              :key="item.id"
+              class="shell__nav-item"
+              :class="{ 'shell__nav-item--active': activeEasyReadId === item.id }"
+              @click="activeEasyReadId = item.id"
+            >
+              <span class="shell__dot"></span>
+              <span class="shell__nav-label">{{ item.label }}</span>
+            </button>
+          </nav>
+        </template>
+
+        <!-- ── Normal (care plan) mode ── -->
+        <template v-else>
+
+          <!-- Quick links: only on hub page -->
+          <template v-if="activeSection === 'home'">
+            <nav class="shell__sidenav">
+              <button class="shell__nav-item" @click="emit('show-recommendations')">
+                <span class="shell__nav-label">Recommendations</span>
+                <span v-if="props.recommendationsCount && props.recommendationsCount > 0" class="shell__badge--orange">{{ props.recommendationsCount }}</span>
+              </button>
+              <button class="shell__nav-item">
+                <span class="shell__nav-label">Archived</span>
+              </button>
+            </nav>
+
+            <hr class="shell__divider" />
+          </template>
+
+          <!-- Care Plan tree -->
+          <nav class="shell__sidenav">
+            <!-- Level 0: Care Plan -->
+            <button class="shell__nav-item" @click="toggleSection('care-plan')">
+              <svg
+                class="shell__caret"
+                :class="{ 'shell__caret--open': expandedSections.has('care-plan') }"
+                width="16" height="16" viewBox="0 0 16 16" fill="none"
+              >
+                <path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span class="shell__nav-label">Care Plan</span>
+            </button>
+
+            <template v-if="expandedSections.has('care-plan')">
+              <template v-for="domain in careDomains" :key="domain.id">
+                <!-- Level 1: Domain -->
+                <button
+                  class="shell__nav-item shell__nav-item--l1"
+                  :class="{
+                    'shell__nav-item--active':
+                      selectedDomainId === domain.id &&
+                      activeSection === 'domain' &&
+                      !(domain.id === 'nutrition' && activeSection === 'domain')
+                  }"
+                  @click="emit('domain-click', domain.id)"
+                >
+                  <svg
+                    class="shell__caret"
+                    :class="{
+                      'shell__caret--open':
+                        domain.id === 'nutrition' &&
+                        selectedDomainId === 'nutrition' &&
+                        activeSection === 'domain'
+                    }"
+                    width="16" height="16" viewBox="0 0 16 16" fill="none"
+                  >
+                    <path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <span class="shell__nav-label">{{ domain.label }}</span>
+                </button>
+
+                <!-- Level 2: Nutrition sub-items -->
+                <template
+                  v-if="domain.id === 'nutrition' && selectedDomainId === 'nutrition' && activeSection === 'domain'"
+                >
+                  <button
+                    v-for="need in nutritionNeeds"
+                    :key="need"
+                    class="shell__nav-item shell__nav-item--l2"
+                    :class="{ 'shell__nav-item--active': activeNutritionNeed === need }"
+                    @click.stop="activeNutritionNeed = need"
+                  >
+                    <svg class="shell__caret shell__caret--sm" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span class="shell__nav-label">{{ need }}</span>
+                  </button>
+                </template>
+              </template>
+            </template>
+
+            <hr class="shell__divider shell__divider--sm" />
+
+            <!-- Image Gallery -->
+            <button
+              class="shell__nav-item"
+              :class="{ 'shell__nav-item--active': activeSection === 'gallery' }"
+              @click="emit('navigate', 'gallery')"
+            >
+              <svg class="shell__caret" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span class="shell__nav-label">Image Gallery</span>
+              <span v-if="galleryCount" class="shell__count">{{ galleryCount }}</span>
+            </button>
+          </nav>
+
+        </template>
+
       </aside>
 
       <!-- ── Main area ── -->
@@ -232,10 +289,7 @@ const careDomains = [
               <PulseTag value="Nursing" colour="lapis" />
             </div>
           </div>
-          <button
-            class="shell__easy-read-btn"
-            @click="emit('toggle-easy-read')"
-          >
+          <button class="shell__easy-read-btn" @click="emit('toggle-easy-read')">
             <PulseIcon icon="target" size="small" />
             Easy Read
           </button>
@@ -309,9 +363,7 @@ const careDomains = [
   transition: background 0.12s;
 }
 
-.shell__tab:hover {
-  background: rgba(255, 255, 255, 0.12);
-}
+.shell__tab:hover { background: rgba(255, 255, 255, 0.12); }
 
 .shell__tab--active {
   color: #fff;
@@ -333,7 +385,7 @@ const careDomains = [
   flex-shrink: 0;
 }
 
-/* ── Body (3 cols) ── */
+/* ── Body ── */
 .shell__body {
   display: flex;
   flex: 1;
@@ -368,9 +420,7 @@ const careDomains = [
   transition: background 0.12s;
 }
 
-.shell__rail-btn:hover {
-  background: var(--pulse-color-neutral-20);
-}
+.shell__rail-btn:hover { background: var(--pulse-color-neutral-20); }
 
 .shell__rail-btn--active {
   background: var(--pulse-color-primary-20);
@@ -404,141 +454,127 @@ const careDomains = [
   margin: 2px 0;
 }
 
-.shell__rail-spacer {
-  flex: 1;
-}
+.shell__rail-spacer { flex: 1; }
 
 /* ── Sidebar ── */
 .shell__sidebar {
-  width: 280px;
+  width: 300px;
   flex-shrink: 0;
   background: var(--pulse-color-neutral-10);
   border-right: 1px solid var(--pulse-color-neutral-40);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  padding-bottom: 24px;
+  padding: 0 0 24px;
 }
 
 .shell__sidebar-actions {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 10px 8px;
+  padding: 8px 16px;
   gap: 8px;
+  height: 51px;
+  flex-shrink: 0;
 }
 
+.shell__sidebar-actions--end {
+  justify-content: flex-end;
+}
+
+/* "Add Item" primary pill button */
 .shell__add-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 14px;
+  padding: 7px 18px;
   border-radius: 20px;
   border: none;
   background: var(--pulse-color-primary-100);
   color: #fff;
   font-family: 'FS Me', sans-serif;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
   transition: background 0.12s;
 }
 
-.shell__add-btn:hover {
-  background: var(--pulse-color-primary-120);
-}
+.shell__add-btn:hover { background: var(--pulse-color-primary-120); }
 
+/* Icon-only button */
 .shell__icon-btn {
-  width: 28px;
-  height: 28px;
-  border: none;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--pulse-color-neutral-50);
   background: transparent;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
+  border-radius: 50%;
   transition: background 0.12s;
+  flex-shrink: 0;
 }
 
-.shell__icon-btn:hover {
-  background: var(--pulse-color-neutral-20);
-}
+.shell__icon-btn:hover { background: var(--pulse-color-neutral-20); }
 
 .shell__pencil-icon {
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
   object-fit: contain;
 }
 
 .shell__divider {
   border: none;
-  border-top: 1px solid var(--pulse-color-neutral-40);
-  margin: 4px 0;
+  border-top: 1px solid var(--pulse-color-neutral-30, #f3f4f5);
+  margin: 14px 16px;
 }
 
-.shell__divider--sm {
-  margin: 8px 10px;
-}
 
 .shell__sidenav {
   display: flex;
   flex-direction: column;
-  padding: 2px 0;
+  gap: 17px;
+  padding: 0 16px;
 }
 
-.shell__back-wrap {
-  padding: 8px 10px;
-}
-
+/* Nav items — 16px Inter matching Figma */
 .shell__nav-item {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 5px 10px;
+  gap: 4px;
+  padding: 0 8px;
   border: none;
   background: transparent;
   cursor: pointer;
   font-family: Inter, sans-serif;
-  font-size: 12px;
-  color: var(--pulse-color-neutral-120);
+  font-size: 16px;
+  font-weight: 400;
+  color: #36393f;
   text-align: left;
   width: 100%;
+  line-height: 21.4px;
   transition: background 0.1s;
-  min-height: 24px;
+  border-radius: 2px;
 }
 
-.shell__nav-item:hover {
-  background: var(--pulse-color-neutral-20);
-}
+.shell__nav-item:hover { background: var(--pulse-color-neutral-20); }
 
+/* Active: Figma #f0fafa bg, darker text */
 .shell__nav-item--active {
-  background: var(--pulse-color-primary-20);
-  color: var(--pulse-color-primary-120);
-  font-weight: 600;
+  background: #f0fafa;
+  color: #172f2f;
 }
 
-.shell__nav-item--active-section {
-  background: var(--pulse-color-primary-30, #d1f0f0);
-  color: #36393f;
-  font-weight: 700;
+.shell__nav-item--active .shell__dot {
+  background: #2b5656;
 }
 
-.shell__nav-item--section {
-  font-size: 12px;
-}
+/* Level 1: care domain items (20px indent) */
+.shell__nav-item--l1 { padding-left: 20px; }
 
-.shell__nav-item--child {
-  padding-left: 24px;
-  font-size: 12px;
-  font-family: Inter, sans-serif;
-  font-weight: 400;
-  color: #000;
-}
-
-.shell__nav-item--dot {
-  padding-left: 28px;
-}
+/* Level 2: need items (34px indent) */
+.shell__nav-item--l2 { padding-left: 34px; }
 
 .shell__nav-label {
   flex: 1;
@@ -548,73 +584,56 @@ const careDomains = [
   text-align: left;
 }
 
-.shell__nav-label--bold {
-  font-family: 'FS Me', sans-serif;
-  font-weight: 700;
-  color: #36393f;
-}
-
-.shell__nav-section-icon {
-  flex-shrink: 0;
-  font-size: 16px;
-  color: var(--pulse-color-neutral-80);
-}
-
-.shell__nav-child-icon {
-  flex-shrink: 0;
-  font-size: 14px;
-  color: var(--pulse-color-neutral-70);
-}
-
+/* Caret SVG — right-pointing, rotates 90° when open */
 .shell__caret {
   flex-shrink: 0;
-  width: 16px;
-  font-size: 14px;
-  color: var(--pulse-color-neutral-80);
-  display: flex;
-  align-items: center;
+  color: #6c727e;
   transition: transform 0.15s;
   transform: rotate(0deg);
 }
 
-.shell__caret--open {
-  transform: rotate(90deg);
-}
+.shell__caret--open { transform: rotate(90deg); }
 
 .shell__caret--sm {
-  font-size: 12px;
+  width: 12px;
+  height: 12px;
+  opacity: 0.65;
 }
 
 .shell__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #6c727e;
   flex-shrink: 0;
-  width: 14px;
-  font-size: 14px;
-  color: var(--pulse-color-neutral-80);
-  line-height: 1;
+  margin: 0 5px;
 }
 
-.shell__badge--red {
+/* Orange badge — Figma: #f97316 */
+.shell__badge--orange {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 5px;
-  border-radius: 10px;
-  background: #b60000;
+  min-width: 17.5px;
+  height: 17.5px;
+  padding: 0 4px;
+  border-radius: 10.5px;
+  background: #f97316;
   color: #fff;
-  font-size: 11px;
+  font-family: Inter, sans-serif;
+  font-size: 8.75px;
   font-weight: 700;
   flex-shrink: 0;
   margin-left: auto;
 }
 
 .shell__count {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--pulse-color-neutral-80);
   margin-left: auto;
   flex-shrink: 0;
 }
+
 
 /* ── Main ── */
 .shell__main {
@@ -704,7 +723,5 @@ const careDomains = [
   flex-shrink: 0;
 }
 
-.shell__easy-read-btn:hover {
-  background: var(--pulse-color-neutral-20);
-}
+.shell__easy-read-btn:hover { background: var(--pulse-color-neutral-20); }
 </style>

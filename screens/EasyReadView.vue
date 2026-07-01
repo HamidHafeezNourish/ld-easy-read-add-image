@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import EditEasyReadPanel from '../panels/EditEasyReadPanel.vue'
 import ReviewCarePlanPanel from '../panels/ReviewCarePlanPanel.vue'
 
-const emit = defineEmits<{ back: [] }>()
+const emit = defineEmits<{ back: []; cardEdited: [title: string] }>()
 
 interface EasyReadCard {
   id: string
@@ -11,6 +11,8 @@ interface EasyReadCard {
   nextReview: string
   imageType: 'nutrition' | 'communication' | 'mobility'
   lines: string[]
+  customImageSrc?: string
+  customImageLabel?: string
 }
 
 const cards = ref<EasyReadCard[]>([
@@ -41,18 +43,10 @@ const cards = ref<EasyReadCard[]>([
   },
 ])
 
-const navItems = [
-  'General Nutrition',
-  'General Nutrition and Hydration',
-  'Dysphagia / Swallowing',
-  'Food Allergies',
-  'Enteral Feeding',
-  'Weight Management',
-]
-const activeNav = ref('Food Allergies')
-
 const editingCard = ref<EasyReadCard | null>(null)
 const reviewingCard = ref<EasyReadCard | null>(null)
+const reviewingSectionTitle = ref<string | null>(null)
+const highlightedCardId = ref<string | null>(null)
 const publishState = ref<'idle' | 'loading' | 'done'>('idle')
 
 function onPublish() {
@@ -64,28 +58,6 @@ function onPublish() {
 
 <template>
   <div class="erv">
-    <!-- Left sidebar -->
-    <aside class="erv__sidebar">
-      <button class="erv__back-link" @click="emit('back')">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path d="M10 4L6 8l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        Return to care plan
-      </button>
-      <ul class="erv__nav">
-        <li
-          v-for="item in navItems"
-          :key="item"
-          class="erv__nav-item"
-          :class="{ 'erv__nav-item--active': activeNav === item }"
-          @click="activeNav = item"
-        >
-          <span class="erv__nav-dot" />
-          {{ item }}
-        </li>
-      </ul>
-    </aside>
-
     <!-- Main content -->
     <main class="erv__main">
 
@@ -129,7 +101,7 @@ function onPublish() {
 
       <!-- Cards -->
       <div class="erv__cards">
-        <div v-for="card in cards" :key="card.id" class="erv__card">
+        <div v-for="card in cards" :key="card.id" class="erv__card" :class="{ 'erv__card--highlighted': highlightedCardId === card.id }">
 
           <!-- Card header -->
           <div class="erv__card-header">
@@ -138,7 +110,7 @@ function onPublish() {
               <p class="erv__card-review">Next review {{ card.nextReview }}</p>
             </div>
             <div class="erv__card-actions">
-              <button class="erv__action-btn erv__action-btn--outline" @click="reviewingCard = card">Review Careplan</button>
+              <button class="erv__action-btn erv__action-btn--outline" @click="reviewingCard = card; highlightedCardId = card.id">Review Careplan</button>
               <button class="erv__action-btn erv__action-btn--outline" @click="editingCard = card">Edit</button>
               <button class="erv__action-btn erv__action-btn--icon">
                 <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -152,10 +124,12 @@ function onPublish() {
 
           <!-- Card body -->
           <div class="erv__card-body">
-            <!-- Image placeholder -->
+            <!-- Image -->
             <div class="erv__card-image">
+              <!-- Custom image from database -->
+              <img v-if="card.customImageSrc" :src="card.customImageSrc" :alt="card.customImageLabel" class="erv__card-image-custom" />
               <!-- Nutrition image -->
-              <svg v-if="card.imageType === 'nutrition'" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+              <svg v-else-if="card.imageType === 'nutrition' && !card.customImageSrc" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
                 <rect width="200" height="200" fill="#8B6914"/>
                 <rect x="0" y="140" width="200" height="60" fill="#7a5c10"/>
                 <circle cx="100" cy="100" r="65" fill="#FF6B35" opacity="0.9"/>
@@ -169,7 +143,7 @@ function onPublish() {
                 <circle cx="130" cy="70" r="10" fill="#FF6B35" opacity="0.7"/>
               </svg>
               <!-- Communication image -->
-              <svg v-else-if="card.imageType === 'communication'" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+              <svg v-else-if="!card.customSvg && card.imageType === 'communication'" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
                 <rect width="200" height="200" fill="#6b7280"/>
                 <rect x="0" y="120" width="200" height="80" fill="#4b5563"/>
                 <circle cx="110" cy="65" r="30" fill="#d1a97a"/>
@@ -178,7 +152,7 @@ function onPublish() {
                 <path d="M110 95 Q80 120 65 115" stroke="#d1a97a" stroke-width="8" stroke-linecap="round" fill="none"/>
               </svg>
               <!-- Mobility image -->
-              <svg v-else viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+              <svg v-else-if="!card.customSvg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
                 <rect width="200" height="200" fill="#c7d2e0"/>
                 <rect x="0" y="155" width="200" height="45" fill="#a8b5c4"/>
                 <rect x="30" y="80" width="140" height="80" rx="4" fill="#e8f0fa" opacity="0.5"/>
@@ -210,14 +184,24 @@ function onPublish() {
       :section-title="editingCard.title"
       :default-text="editingCard.lines.join('\n')"
       @close="editingCard = null"
-      @save="(lines) => { editingCard!.lines = lines; editingCard = null }"
+      @save="(lines, img) => { const t = editingCard!.title; editingCard!.lines = lines; if (img) { editingCard!.customImageSrc = img.src; editingCard!.customImageLabel = img.label } editingCard = null; emit('cardEdited', t) }"
+      @view-page="(page) => { reviewingSectionTitle = page }"
     />
 
-    <!-- Review Careplan panel -->
+    <!-- Review Careplan panel (from card button — no back nav) -->
     <ReviewCarePlanPanel
       v-if="reviewingCard"
       :section-title="reviewingCard.title"
-      @close="reviewingCard = null"
+      @close="reviewingCard = null; highlightedCardId = null"
+    />
+
+    <!-- Review Careplan panel (from image gallery link — back nav returns to gallery) -->
+    <ReviewCarePlanPanel
+      v-if="reviewingSectionTitle"
+      :section-title="reviewingSectionTitle"
+      breadcrumb="Back to image database"
+      @close="reviewingSectionTitle = null"
+      @navigate-back="reviewingSectionTitle = null"
     />
   </div>
 </template>
@@ -232,75 +216,6 @@ function onPublish() {
   height: 100%;
   overflow: hidden;
   background: var(--pulse-color-neutral-20, #f3f4f5);
-}
-
-/* Sidebar */
-.erv__sidebar {
-  width: 220px;
-  flex-shrink: 0;
-  background: #fff;
-  border-right: 1px solid var(--pulse-color-neutral-30);
-  display: flex;
-  flex-direction: column;
-  padding: 16px 0;
-  overflow-y: auto;
-}
-
-.erv__back-link {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-family: Inter, sans-serif;
-  font-size: 13px;
-  color: #6c727e;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 8px 16px 16px;
-  text-align: left;
-  transition: color 0.12s;
-}
-
-.erv__back-link:hover {
-  color: #2b5656;
-}
-
-.erv__nav {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.erv__nav-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 16px;
-  font-family: Inter, sans-serif;
-  font-size: 13px;
-  color: #36393f;
-  cursor: pointer;
-  transition: background 0.1s;
-  border-radius: 4px;
-  margin: 0 6px;
-}
-
-.erv__nav-item:hover {
-  background: var(--pulse-color-neutral-20);
-}
-
-.erv__nav-item--active {
-  background: #d1f0f0;
-  color: #2b5656;
-  font-weight: 600;
-}
-
-.erv__nav-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: currentColor;
-  flex-shrink: 0;
 }
 
 /* Main */
@@ -406,6 +321,12 @@ function onPublish() {
   border-radius: 12px;
   border: 1px solid var(--pulse-color-neutral-30);
   overflow: hidden;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.erv__card--highlighted {
+  border-color: var(--pulse-color-primary-100, #2b5656);
+  box-shadow: 0 0 0 3px rgba(43, 86, 86, 0.18);
 }
 
 /* Card header */
@@ -489,6 +410,13 @@ function onPublish() {
   overflow: hidden;
   flex-shrink: 0;
   background: #e5e7eb;
+}
+
+.erv__card-image-custom {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .erv__card-text {

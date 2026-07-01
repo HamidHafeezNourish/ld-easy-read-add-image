@@ -9,6 +9,9 @@ import UploadPanel from './panels/UploadPanel.vue'
 import EditPanel from './panels/EditPanel.vue'
 import EasyReadPanel from './panels/EasyReadPanel.vue'
 import PhotoDialog from './dialogs/PhotoDialog.vue'
+import RecommendationsPanel from './panels/RecommendationsPanel.vue'
+import CarePlanEditPanel from './panels/CarePlanEditPanel.vue'
+import ReviewCarePlanPanel from './panels/ReviewCarePlanPanel.vue'
 
 export type GalleryImage = {
   id: string
@@ -26,6 +29,35 @@ const activeSection = ref<Section>('home')
 const selectedDomainId = ref<string>('nutrition')
 const easyRead = ref(false)
 const easyReadPanelOpen = ref(false)
+
+const editedCardTitles = ref<string[]>([])
+const showRecommendations = ref(false)
+const editingRecommendationTitle = ref<string | null>(null)
+const reviewingRecommendationTitle = ref<string | null>(null)
+
+function onCardEdited(title: string) {
+  if (!editedCardTitles.value.includes(title)) editedCardTitles.value.push(title)
+}
+
+function onShowRecommendations() {
+  showRecommendations.value = true
+}
+
+function onEditCard(title: string) {
+  showRecommendations.value = false
+  editingRecommendationTitle.value = title
+}
+
+function onReviewCard(title: string) {
+  showRecommendations.value = false
+  reviewingRecommendationTitle.value = title
+}
+
+function onCarePlanUpdated() {
+  const title = editingRecommendationTitle.value
+  editingRecommendationTitle.value = null
+  reviewingRecommendationTitle.value = title
+}
 
 const DEMO_IMAGES: GalleryImage[] = [
   { id: 'd1', src: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400"><rect width="400" height="400" fill="%232D6A8F"/><text x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="white" font-size="24" font-family="sans-serif">Photo 1</text></svg>', name: 'garden-visit.jpg', size: 245000, blurred: false, date: '18 Jun 2026', uploadedBy: 'Karim Bennett' },
@@ -114,9 +146,11 @@ function onNavigate(section: Section) {
     :gallery-count="images.length"
     :easy-read="easyRead"
     :selected-domain-id="selectedDomainId"
+    :recommendations-count="editedCardTitles.length"
     @navigate="onNavigate"
     @domain-click="onDomainClick"
     @toggle-easy-read="easyReadPanelOpen = true"
+    @show-recommendations="onShowRecommendations"
   >
     <CarePlanHub
       v-if="activeSection === 'home'"
@@ -131,6 +165,7 @@ function onNavigate(section: Section) {
     <EasyReadView
       v-else-if="activeSection === 'easy-read'"
       @back="activeSection = 'home'"
+      @card-edited="onCardEdited"
     />
     <ImageGalleryContent
       v-else
@@ -156,6 +191,27 @@ function onNavigate(section: Section) {
     v-if="easyReadPanelOpen"
     @close="easyReadPanelOpen = false"
     @generate="() => { easyReadPanelOpen = false; activeSection = 'easy-read' }"
+  />
+
+  <RecommendationsPanel
+    v-if="showRecommendations"
+    :edited-titles="editedCardTitles"
+    @close="showRecommendations = false"
+    @edit-card="onEditCard"
+    @review-card="onReviewCard"
+  />
+
+  <CarePlanEditPanel
+    v-if="editingRecommendationTitle"
+    :section-title="editingRecommendationTitle"
+    @close="editingRecommendationTitle = null"
+    @update="onCarePlanUpdated"
+  />
+
+  <ReviewCarePlanPanel
+    v-if="reviewingRecommendationTitle"
+    :section-title="reviewingRecommendationTitle"
+    @close="reviewingRecommendationTitle = null"
   />
 
   <Teleport to="body">

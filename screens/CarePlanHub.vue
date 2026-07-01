@@ -6,13 +6,6 @@ import iconBehaviour from '../assets/icon-behaviour.png'
 
 const emit = defineEmits<{ 'domain-click': [id: string] }>()
 
-const recentlyUpdated = [
-  { id: 1, domainId: 'nutrition', title: 'Infection prevention', category: 'Medication and healthcare', body: 'New interaction linked' },
-  { id: 2, domainId: 'nutrition', title: 'Weight management', category: 'Nutrition and hydration', body: 'Planned outcome altered' },
-  { id: 3, domainId: 'behaviour', title: 'Pressure injury prevention', category: 'Skin integrity', body: 'New need added' },
-  { id: 4, domainId: 'nutrition', title: 'Pain monitoring', category: 'Medication and healthcare', body: 'Interaction recorded' },
-  { id: 5, domainId: 'behaviour', title: 'Mobility assessment', category: 'Mobility and physical', body: 'Goal updated' },
-]
 
 type IconLetter = string
 
@@ -178,46 +171,6 @@ const careDomains: StackedItem[] = [
 <template>
   <div class="hub">
 
-    <!-- ── Search ── -->
-    <div class="hub__section hub__section--search">
-      <p class="hub__section-label">Search</p>
-      <div class="hub__search-bar">
-        <svg class="hub__search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
-          <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2" />
-          <line x1="16.5" y1="16.5" x2="22" y2="22" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-        </svg>
-        <input
-          type="text"
-          class="hub__search-input"
-          placeholder="Search by care plan, needs, tags"
-        />
-      </div>
-    </div>
-
-    <!-- ── Recently Updated ── -->
-    <div class="hub__section">
-      <div class="hub__section-header">
-        <p class="hub__section-label">Recently Updated</p>
-        <div class="hub__carousel-dots">
-          <span class="hub__dot hub__dot--active" />
-          <span class="hub__dot" />
-          <span class="hub__dot" />
-        </div>
-      </div>
-      <div class="hub__carousel">
-        <div
-          v-for="item in recentlyUpdated"
-          :key="item.id"
-          class="hub__update-card"
-          @click="emit('domain-click', item.domainId)"
-        >
-          <p class="hub__card-title">{{ item.title }}</p>
-          <p class="hub__card-category">{{ item.category }}</p>
-          <p class="hub__card-body">{{ item.body }}</p>
-        </div>
-      </div>
-    </div>
-
     <!-- ── Section ── -->
     <div class="hub__section">
       <p class="hub__section-label">Section</p>
@@ -321,18 +274,8 @@ const careDomains: StackedItem[] = [
   gap: 16px;
 }
 
-.hub__section--search {
-  padding-bottom: 20px;
-}
-
 .hub__section--last {
   border-bottom: none;
-}
-
-.hub__section-header {
-  display: flex;
-  align-items: center;
-  gap: 16px;
 }
 
 .hub__section-label {
@@ -341,120 +284,6 @@ const careDomains: StackedItem[] = [
   font-weight: 700;
   color: var(--pulse-color-neutral-120, #36393f);
   margin: 0;
-}
-
-/* Carousel dots */
-.hub__carousel-dots {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.hub__dot {
-  display: block;
-  width: 4px;
-  height: 4px;
-  border-radius: 4px;
-  background: var(--pulse-color-neutral-60, #9ca3af);
-}
-
-.hub__dot--active {
-  width: 24px;
-  background: var(--pulse-color-care-delivery-2, #dd5f8b);
-}
-
-/* Search */
-.hub__search-bar {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  height: 52px;
-  padding: 12px 17px;
-  border: 1px solid var(--pulse-color-neutral-50, #d1d5db);
-  border-radius: 4px;
-  background: #fff;
-}
-
-.hub__search-icon {
-  flex-shrink: 0;
-  color: var(--pulse-color-neutral-80, #6b7280);
-}
-
-.hub__search-input {
-  border: none;
-  outline: none;
-  flex: 1;
-  font-family: Inter, sans-serif;
-  font-size: 13px;
-  color: var(--pulse-color-neutral-120, #36393f);
-  background: transparent;
-}
-
-.hub__search-input::placeholder {
-  color: var(--pulse-color-neutral-70, #9ca3af);
-}
-
-/* Recently Updated carousel */
-.hub__carousel {
-  display: flex;
-  gap: 16px;
-  overflow-x: auto;
-  padding-bottom: 4px;
-  scrollbar-width: thin;
-}
-
-.hub__carousel::-webkit-scrollbar {
-  height: 4px;
-}
-
-.hub__carousel::-webkit-scrollbar-thumb {
-  background: var(--pulse-color-neutral-50);
-  border-radius: 2px;
-}
-
-.hub__update-card {
-  flex-shrink: 0;
-  width: 280px;
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px -1px rgba(0,0,0,0.1);
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  cursor: pointer;
-  transition: box-shadow 0.15s;
-}
-
-.hub__update-card:hover {
-  box-shadow: 0 4px 8px rgba(0,0,0,0.12), 0 2px 4px rgba(0,0,0,0.08);
-}
-
-.hub__card-title {
-  font-family: 'FS Me', sans-serif;
-  font-size: 20px;
-  font-weight: 700;
-  color: #2b5656;
-  margin: 0;
-  line-height: 1.2;
-}
-
-.hub__card-category {
-  font-family: Inter, sans-serif;
-  font-size: 12px;
-  font-weight: 500;
-  color: #3e7e7e;
-  margin: 0;
-}
-
-.hub__card-body {
-  font-family: Inter, sans-serif;
-  font-size: 15px;
-  font-weight: 400;
-  color: #36393f;
-  margin: 0;
-  line-height: 1.35;
-  margin-top: 2px;
 }
 
 /* Stacked list (Section + All Care Domains) */

@@ -1,26 +1,51 @@
 <script setup lang="ts">
 import PulseDrawer from '@/components/PulseDrawer/PulseDrawer.vue'
 import PulseButton from '@/components/PulseButton/PulseButton.vue'
-import PulseTag from '@/components/PulseTag/PulseTag.vue'
 
-const props = defineProps<{
-  sectionTitle: string
-}>()
+const props = defineProps<{ sectionTitle: string; breadcrumb?: string }>()
+const emit = defineEmits<{ close: []; navigateBack: [] }>()
 
-const emit = defineEmits<{ close: [] }>()
+interface Carer  { name: string; role: string; initials: string }
+interface Interaction { title: string; body: string }
+interface RiskData {
+  category: string
+  title: string
+  score: number
+  factors: string[]
+  likelihood: number
+  impact: number
+  residualRisk: number
+  mitigations: string[]
+  mitigationLikelihood: number
+  mitigationImpact: number
+}
+interface SectionData {
+  heading: string
+  nextReview: string
+  identifiedNeed: string
+  needSeverity: string
+  needScore: number
+  plannedOutcomes: string
+  howToAchieve: string
+  interactions: Interaction[]
+  risk: RiskData
+  carers: Carer[]
+  reviewStartTarget: string
+  reviewNotes: string
+}
 
-const data = {
+const data: Record<string, SectionData> = {
   'General Nutrition': {
-    heading: 'General Nutrition',
-    description: 'Covers nutritional planning, allergy management, and assistance with meal preparation to promote autonomy and health.',
-    tags: ['Nursing', 'Learning and Disabilities'],
+    heading: 'Food Allergies',
     nextReview: '10 Jun—21 Jul 2025',
     identifiedNeed: 'Isabel follows a vegetarian diet, avoiding all meat, poultry, and fish. This choice reflects her personal values and contributes to her overall wellbeing. Her meals must consistently honour this preference while supporting her nutritional needs.',
     needSeverity: 'Sever need',
     needScore: 16,
+    plannedOutcomes: 'Isabel will receive balanced, satisfying vegetarian meals that provide adequate protein, iron, and essential vitamins. She should feel respected and confident that her dietary choices are understood and upheld. Caregivers will be equipped to prepare varied, nutritious meals and adjust plans in consultation with healthcare professionals as needed.',
+    howToAchieve: 'To meet these outcomes, caregivers will follow a structured meal plan that includes diverse plant-based ingredients such as legumes, tofu, whole grains, and fortified foods. Labels will be checked carefully to avoid hidden animal products, and kitchen practices will prevent cross-contamination. Regular check-ins with Isabel will ensure her preferences are reflected, and dietitians will be consulted to monitor her nutritional status and make adjustments when necessary.',
     interactions: [
       { title: 'Interaction 1', body: 'Daily food preparation will involve thoughtful ingredient selection and clear communication among caregivers, family, and any external providers to ensure consistency.' },
-      { title: 'Interaction 2', body: 'Isabel will be encouraged to share her preferences and feedback, fostering a sense of autonomy and enjoyment around mealtimes' },
+      { title: 'Interaction 2', body: 'Isabel will be encouraged to share her preferences and feedback, fostering a sense of autonomy and enjoyment around mealtimes.' },
     ],
     risk: {
       category: 'Medical Condition risk',
@@ -43,17 +68,17 @@ const data = {
       mitigationImpact: 3,
     },
     carers: [{ name: 'Line Idris', role: 'Carer', initials: 'LI' }],
+    reviewStartTarget: '8 May—23 Jul 2025',
     reviewNotes: "If Isabel's dietary needs are not carefully managed, there is a risk of nutritional gaps, particularly in protein, iron, and vitamin B12.",
-    lastReview: '8 May 2025  15:39 by Lina Idris',
   },
   'Communication': {
     heading: 'Communication',
-    description: 'Supporting clear and effective communication for Sarah in her daily interactions.',
-    tags: ['Nursing', 'Learning and Disabilities'],
     nextReview: '10 Jun—21 Jul 2025',
     identifiedNeed: 'Sarah benefits from clear, simple language and visual cues to aid understanding. Carers should use calm, patient communication styles and avoid jargon.',
     needSeverity: 'Moderate need',
     needScore: 10,
+    plannedOutcomes: 'Sarah will be supported to communicate her needs and preferences confidently. Carers will use consistent, person-centred communication strategies to ensure she is heard and understood.',
+    howToAchieve: 'Carers will use short sentences, visual aids, and allow time for Sarah to process and respond. Strategies will be reviewed regularly and adapted to her changing needs.',
     interactions: [
       { title: 'Interaction 1', body: 'Use simple words and short sentences. Speak slowly and clearly.' },
     ],
@@ -70,17 +95,17 @@ const data = {
       mitigationImpact: 3,
     },
     carers: [{ name: 'Line Idris', role: 'Carer', initials: 'LI' }],
+    reviewStartTarget: '8 May—23 Jul 2025',
     reviewNotes: 'Review communication strategy quarterly or when care team changes.',
-    lastReview: '8 May 2025  15:39 by Lina Idris',
   },
   'Mobility': {
     heading: 'Mobility',
-    description: 'Supporting Sarah with safe movement and transfers in and around her home.',
-    tags: ['Nursing', 'Learning and Disabilities'],
     nextReview: '10 Jun—21 Jul 2025',
     identifiedNeed: 'Sarah needs carer assistance to move between chairs and navigate stairs safely. She uses a grab rail on stairs.',
     needSeverity: 'Sever need',
     needScore: 16,
+    plannedOutcomes: 'Sarah will be able to move safely within her home environment with appropriate carer support. Falls will be prevented through consistent use of assistive equipment.',
+    howToAchieve: 'Carers will assist with all transfers using a transfer belt. All mobility aids will be checked weekly. Hazards in walkways will be cleared and grab rails inspected monthly.',
     interactions: [
       { title: 'Interaction 1', body: 'Always assist with transfers and ensure the environment is clear of hazards.' },
     ],
@@ -97,118 +122,161 @@ const data = {
       mitigationImpact: 3,
     },
     carers: [{ name: 'Line Idris', role: 'Carer', initials: 'LI' }],
+    reviewStartTarget: '8 May—23 Jul 2025',
     reviewNotes: 'Review mobility plan if any falls occur or functional status changes.',
-    lastReview: '8 May 2025  15:39 by Lina Idris',
   },
 }
 
-const section = (data as any)[props.sectionTitle] ?? data['General Nutrition']
+const section = (data as Record<string, SectionData>)[props.sectionTitle] ?? data['General Nutrition']
+
+function scoreColor(score: number): string {
+  if (score >= 12) return '#cc5252'
+  if (score >= 6)  return '#ebcd4d'
+  return '#4caf50'
+}
 </script>
 
 <template>
   <PulseDrawer
     :visible="true"
     position="right"
-    :title="props.sectionTitle"
+    :breadcrumb="props.breadcrumb ?? 'Previous Reviews'"
+    :breadcrumb-callback="props.breadcrumb ? () => { emit('navigateBack') } : undefined"
+    :title="section.heading"
     @update:visible="(v) => { if (!v) emit('close') }"
   >
     <div class="rcp__body">
 
-      <!-- Title block -->
-      <div class="rcp__title-block">
-        <h2 class="rcp__heading">{{ section.heading }}</h2>
-        <p class="rcp__desc">{{ section.description }}</p>
-        <div class="rcp__tags">
-          <span v-for="tag in section.tags" :key="tag" class="rcp__tag">{{ tag }}</span>
+      <!-- Metadata: next review + print -->
+      <div class="rcp__meta-row">
+        <div class="rcp__meta-dates">
+          <span class="rcp__meta-label">Next review</span>
+          <span class="rcp__meta-value">{{ section.nextReview }}</span>
         </div>
-        <p class="rcp__review-date">Next review {{ section.nextReview }}</p>
+        <PulseButton label="Print" type="secondary" :small="true" />
       </div>
 
-      <!-- Identified Need -->
-      <div class="rcp__section">
-        <h3 class="rcp__section-title">Identified Need</h3>
+      <!-- ── Identified Need ── -->
+      <div class="rcp__block">
+        <div class="rcp__divider" />
+        <h4 class="rcp__section-title">Identified Need</h4>
         <p class="rcp__body-text">{{ section.identifiedNeed }}</p>
-        <div class="rcp__badge-row">
-          <span class="rcp__score-badge">{{ section.needScore }}</span>
-          <span class="rcp__need-label">{{ section.needSeverity }}</span>
+        <div class="rcp__score-row">
+          <div class="rcp__score-badge" :style="{ background: scoreColor(section.needScore) }">
+            {{ section.needScore }}
+          </div>
+          <span class="rcp__score-label">{{ section.needSeverity }}</span>
         </div>
       </div>
 
-      <!-- Linked Interactions -->
-      <div class="rcp__section">
-        <h3 class="rcp__section-title">Linked Interactions</h3>
-        <div v-for="interaction in section.interactions" :key="interaction.title" class="rcp__interaction">
-          <h4 class="rcp__interaction-title">{{ interaction.title }}</h4>
+      <!-- ── Planned Outcomes ── -->
+      <div class="rcp__block">
+        <div class="rcp__divider" />
+        <h4 class="rcp__section-title">Planned Outcomes</h4>
+        <p class="rcp__body-text">{{ section.plannedOutcomes }}</p>
+        <h5 class="rcp__sub-heading">How to achieve outcomes</h5>
+        <p class="rcp__body-text">{{ section.howToAchieve }}</p>
+      </div>
+
+      <!-- ── Linked Interactions ── -->
+      <div class="rcp__block">
+        <div class="rcp__divider" />
+        <h4 class="rcp__section-title">Linked Interactions</h4>
+        <template v-for="interaction in section.interactions" :key="interaction.title">
+          <h5 class="rcp__sub-heading">{{ interaction.title }}</h5>
           <p class="rcp__body-text">{{ interaction.body }}</p>
-        </div>
+        </template>
       </div>
 
-      <!-- Risk -->
-      <div class="rcp__section">
-        <h3 class="rcp__section-title">Risk</h3>
-        <p class="rcp__risk-category">{{ section.risk.category }}</p>
-        <p class="rcp__risk-title">{{ section.risk.title }}</p>
+      <!-- ── Risk ── -->
+      <div class="rcp__block">
+        <div class="rcp__divider" />
+        <h4 class="rcp__section-title">Risk</h4>
+        <h5 class="rcp__sub-heading">{{ section.risk.category }}</h5>
+        <p class="rcp__risk-name">{{ section.risk.title }}</p>
 
-        <div class="rcp__score-row">
-          <span class="rcp__score-badge">{{ section.risk.score }}</span>
-          <span class="rcp__risk-score-label">Risk Score</span>
-        </div>
-
-        <h4 class="rcp__sub-title">Risk Factors</h4>
-        <ul class="rcp__list">
-          <li v-for="f in section.risk.factors" :key="f">{{ f }}</li>
-        </ul>
-
-        <div class="rcp__likelihood-row">
-          <div class="rcp__likelihood-item">
-            <span class="rcp__score-badge rcp__score-badge--sm">{{ section.risk.likelihood }}</span>
-            <span class="rcp__likelihood-label">High Likelihood</span>
+        <!-- Risk score card -->
+        <div class="rcp__risk-card">
+          <div class="rcp__score-row">
+            <div class="rcp__score-badge" :style="{ background: scoreColor(section.risk.score) }">
+              {{ section.risk.score }}
+            </div>
+            <span class="rcp__score-label">Risk Score</span>
           </div>
-          <div class="rcp__likelihood-item">
-            <span class="rcp__score-badge rcp__score-badge--sm">{{ section.risk.impact }}</span>
-            <span class="rcp__likelihood-label">Major Impact</span>
-          </div>
-        </div>
-
-        <div class="rcp__score-row">
-          <span class="rcp__score-badge rcp__score-badge--amber">{{ section.risk.residualRisk }}</span>
-          <span class="rcp__risk-score-label">Residual Risk</span>
-        </div>
-
-        <h4 class="rcp__sub-title">Mitigations</h4>
-        <ul class="rcp__list">
-          <li v-for="m in section.risk.mitigations" :key="m">{{ m }}</li>
-        </ul>
-
-        <div class="rcp__likelihood-row">
-          <div class="rcp__likelihood-item">
-            <span class="rcp__score-badge rcp__score-badge--sm rcp__score-badge--green">{{ section.risk.mitigationLikelihood }}</span>
-            <span class="rcp__likelihood-label">High Likelihood</span>
-          </div>
-          <div class="rcp__likelihood-item">
-            <span class="rcp__score-badge rcp__score-badge--sm rcp__score-badge--green">{{ section.risk.mitigationImpact }}</span>
-            <span class="rcp__likelihood-label">Major Impact</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Responsible Carers -->
-      <div class="rcp__section">
-        <h3 class="rcp__section-title">Responsible carers</h3>
-        <div v-for="carer in section.carers" :key="carer.name" class="rcp__carer">
-          <div class="rcp__carer-avatar">{{ carer.initials }}</div>
           <div>
+            <p class="rcp__risk-factors-title">Risk Factors</p>
+            <ul class="rcp__list">
+              <li v-for="f in section.risk.factors" :key="f">{{ f }}</li>
+            </ul>
+          </div>
+          <div class="rcp__risk-card-rule" />
+          <div class="rcp__likelihood-row">
+            <div class="rcp__likelihood-item">
+              <div class="rcp__score-badge rcp__score-badge--light-red">{{ section.risk.likelihood }}</div>
+              <span class="rcp__likelihood-label">High Likelihood</span>
+            </div>
+            <div class="rcp__likelihood-item">
+              <div class="rcp__score-badge rcp__score-badge--light-red">{{ section.risk.impact }}</div>
+              <span class="rcp__likelihood-label">Major Impact</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Residual risk card -->
+        <div class="rcp__risk-card">
+          <div class="rcp__score-row">
+            <div class="rcp__score-badge rcp__score-badge--amber-thick">{{ section.risk.residualRisk }}</div>
+            <span class="rcp__score-label">Residual Risk</span>
+          </div>
+          <div>
+            <p class="rcp__risk-factors-title">Mitigations</p>
+            <ul class="rcp__list">
+              <li v-for="m in section.risk.mitigations" :key="m">{{ m }}</li>
+            </ul>
+          </div>
+          <div class="rcp__risk-card-rule" />
+          <div class="rcp__likelihood-row">
+            <div class="rcp__likelihood-item">
+              <div class="rcp__score-badge rcp__score-badge--amber-thin">{{ section.risk.mitigationLikelihood }}</div>
+              <span class="rcp__likelihood-label">High Likelihood</span>
+            </div>
+            <div class="rcp__likelihood-item">
+              <div class="rcp__score-badge rcp__score-badge--amber-thin">{{ section.risk.mitigationImpact }}</div>
+              <span class="rcp__likelihood-label">Major Impact</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Responsible Carers ── -->
+      <div class="rcp__block">
+        <div class="rcp__divider" />
+        <h4 class="rcp__section-title">Responsible carers</h4>
+        <div v-for="carer in section.carers" :key="carer.name" class="rcp__carer-row">
+          <div class="rcp__carer-avatar rcp__carer-avatar--lg">{{ carer.initials }}</div>
+          <div class="rcp__carer-info">
             <p class="rcp__carer-name">{{ carer.name }}</p>
             <p class="rcp__carer-role">{{ carer.role }}</p>
           </div>
         </div>
       </div>
 
-      <!-- Review Notes -->
-      <div class="rcp__section">
-        <h3 class="rcp__section-title">Review Notes</h3>
-        <p class="rcp__review-meta">Last review {{ section.lastReview }}</p>
+      <!-- ── Review Notes ── -->
+      <div class="rcp__block rcp__block--last">
+        <div class="rcp__divider" />
+        <h4 class="rcp__section-title">Review Notes</h4>
+        <div class="rcp__meta-dates rcp__meta-dates--sm">
+          <span class="rcp__meta-label">Start—Target:</span>
+          <span class="rcp__meta-value">{{ section.reviewStartTarget }}</span>
+        </div>
         <p class="rcp__body-text">{{ section.reviewNotes }}</p>
+        <div v-for="carer in section.carers" :key="carer.name" class="rcp__carer-row">
+          <div class="rcp__carer-avatar rcp__carer-avatar--sm">{{ carer.initials }}</div>
+          <div class="rcp__carer-info">
+            <p class="rcp__carer-name">{{ carer.name }}</p>
+            <p class="rcp__carer-role">{{ carer.role }}</p>
+          </div>
+        </div>
       </div>
 
     </div>
@@ -220,216 +288,232 @@ const section = (data as any)[props.sectionTitle] ?? data['General Nutrition']
 </template>
 
 <style scoped>
+/* ── Scrollable body ── */
 .rcp__body {
-  flex: 1;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 0;
+  width: 100%;
 }
 
-.rcp__title-block {
-  padding: 4px 0 20px;
-  border-bottom: 1px solid var(--pulse-color-neutral-30);
-  margin-bottom: 0;
+/* ── Top metadata row ── */
+.rcp__meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-bottom: 4px;
 }
 
-.rcp__heading {
+.rcp__meta-dates {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.rcp__meta-dates--sm {
+  margin-bottom: 12px;
+}
+
+.rcp__meta-label {
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--pulse-color-neutral-100, #6c727e);
+  white-space: nowrap;
+}
+
+.rcp__meta-value {
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--pulse-color-neutral-100, #6c727e);
+  white-space: nowrap;
+}
+
+/* ── Section blocks ── */
+.rcp__block {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.rcp__block--last {
+  padding-bottom: 40px;
+}
+
+/* ── Divider ── */
+.rcp__divider {
+  height: 1px;
+  background: var(--pulse-color-neutral-30, #f3f4f5);
+  flex-shrink: 0;
+  margin: 14px 0 0;
+}
+
+/* ── Typography ── */
+.rcp__section-title {
   font-family: 'FS Me', sans-serif;
   font-size: 20px;
   font-weight: 700;
-  color: #36393f;
-  margin: 0 0 6px;
-}
-
-.rcp__desc {
-  font-family: Inter, sans-serif;
-  font-size: 13px;
-  color: #6c727e;
-  margin: 0 0 10px;
-  line-height: 1.5;
-}
-
-.rcp__tags {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-  margin-bottom: 8px;
-}
-
-.rcp__tag {
-  font-family: Inter, sans-serif;
-  font-size: 11px;
-  font-weight: 500;
-  padding: 3px 8px;
-  border-radius: 12px;
-  background: #dbdbec;
-  color: #36393f;
-}
-
-.rcp__review-date {
-  font-family: Inter, sans-serif;
-  font-size: 12px;
-  color: #6c727e;
+  color: var(--pulse-color-primary-100, #2b5656);
   margin: 0;
+  line-height: 1;
 }
 
-/* Sections */
-.rcp__section {
-  padding: 20px 0;
-  border-bottom: 1px solid var(--pulse-color-neutral-30);
-}
-
-.rcp__section:last-child {
-  border-bottom: none;
-}
-
-.rcp__section-title {
+.rcp__sub-heading {
   font-family: 'FS Me', sans-serif;
-  font-size: 17px;
+  font-size: 18px;
   font-weight: 700;
-  color: #36393f;
-  margin: 0 0 12px;
-}
-
-.rcp__sub-title {
-  font-family: 'FS Me', sans-serif;
-  font-size: 14px;
-  font-weight: 700;
-  color: #36393f;
-  margin: 14px 0 8px;
+  color: var(--pulse-color-primary-100, #2b5656);
+  margin: 0;
+  line-height: 1;
 }
 
 .rcp__body-text {
   font-family: Inter, sans-serif;
-  font-size: 14px;
+  font-size: 18px;
+  font-weight: 500;
   color: #36393f;
-  line-height: 1.6;
-  margin: 0 0 10px;
+  line-height: 23.8px;
+  margin: 0;
 }
 
-.rcp__badge-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-.rcp__score-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: #fee2e2;
-  color: #b60000;
-  font-family: 'FS Me', sans-serif;
-  font-size: 13px;
-  font-weight: 700;
-  flex-shrink: 0;
-}
-
-.rcp__score-badge--sm {
-  width: 26px;
-  height: 26px;
-  font-size: 12px;
-}
-
-.rcp__score-badge--amber {
-  background: #fef3c7;
-  color: #92400e;
-}
-
-.rcp__score-badge--green {
-  background: #dcfce7;
-  color: #166534;
-}
-
-.rcp__need-label {
+.rcp__risk-name {
   font-family: Inter, sans-serif;
-  font-size: 13px;
+  font-size: 16px;
+  font-weight: 400;
   color: #36393f;
+  line-height: 21.4px;
+  margin: 0;
 }
 
-.rcp__risk-category {
+.rcp__risk-factors-title {
   font-family: Inter, sans-serif;
-  font-size: 12px;
-  font-weight: 600;
-  color: #6c727e;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin: 0 0 4px;
-}
-
-.rcp__risk-title {
-  font-family: 'FS Me', sans-serif;
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 700;
   color: #36393f;
-  margin: 0 0 12px;
-}
-
-.rcp__score-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 12px 0 4px;
-}
-
-.rcp__risk-score-label {
-  font-family: 'FS Me', sans-serif;
-  font-size: 14px;
-  font-weight: 700;
-  color: #36393f;
+  margin: 0 0 8px;
 }
 
 .rcp__list {
   font-family: Inter, sans-serif;
-  font-size: 13px;
+  font-size: 16px;
+  font-weight: 400;
   color: #36393f;
-  line-height: 1.6;
-  padding-left: 18px;
+  line-height: 21.4px;
+  padding-left: 24px;
   margin: 0;
+  list-style: disc;
 }
 
 .rcp__list li {
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
+/* ── Score row ── */
+.rcp__score-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 60px;
+}
+
+.rcp__score-label {
+  font-family: Inter, sans-serif;
+  font-size: 20px;
+  font-weight: 500;
+  color: #36393f;
+  line-height: 26.2px;
+}
+
+/* ── Score badges — 40px circles ── */
+.rcp__score-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: Inter, sans-serif;
+  font-size: 18px;
+  font-weight: 400;
+  color: #fff;
+  flex-shrink: 0;
+  background: #cc5252; /* default: red */
+}
+
+/* Light red fill (likelihood/impact) */
+.rcp__score-badge--light-red {
+  background: #ffb2b2;
+  color: #172f2f;
+}
+
+/* Amber thick border (residual risk) */
+.rcp__score-badge--amber-thick {
+  background: transparent;
+  border: 3px solid #ebcd4d;
+  color: #172f2f;
+}
+
+/* Amber thin border (mitigation likelihood) */
+.rcp__score-badge--amber-thin {
+  background: transparent;
+  border: 1px solid #e6c020;
+  color: #172f2f;
+}
+
+/* ── Risk cards (bordered boxes) ── */
+.rcp__risk-card {
+  border: 1px solid #979797;
+  border-radius: 9px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.rcp__risk-card-rule {
+  height: 1px;
+  background: #979797;
+  margin: 0 -8px;
+}
+
+/* ── Likelihood row ── */
 .rcp__likelihood-row {
   display: flex;
-  gap: 20px;
-  margin: 14px 0;
+  gap: 44px;
+  align-items: center;
+  padding: 0 30px;
+  min-height: 48px;
 }
 
 .rcp__likelihood-item {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
 }
 
 .rcp__likelihood-label {
   font-family: Inter, sans-serif;
-  font-size: 13px;
+  font-size: 16px;
+  font-weight: 500;
   color: #36393f;
+  line-height: 21.4px;
 }
 
-/* Carers */
-.rcp__carer {
+/* ── Carer rows ── */
+.rcp__carer-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
+  padding: 4px 0;
 }
 
 .rcp__carer-avatar {
-  width: 38px;
-  height: 38px;
   border-radius: 50%;
-  background: var(--pulse-color-primary-20);
-  color: var(--pulse-color-primary-100);
+  background: var(--pulse-color-primary-20, #e8f0f0);
+  color: var(--pulse-color-primary-100, #2b5656);
   font-family: 'FS Me', sans-serif;
-  font-size: 13px;
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -437,28 +521,36 @@ const section = (data as any)[props.sectionTitle] ?? data['General Nutrition']
   flex-shrink: 0;
 }
 
+.rcp__carer-avatar--lg {
+  width: 32px;
+  height: 32px;
+  font-size: 12px;
+}
+
+.rcp__carer-avatar--sm {
+  width: 24px;
+  height: 24px;
+  font-size: 10px;
+}
+
 .rcp__carer-name {
   font-family: 'FS Me', sans-serif;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 700;
-  color: #36393f;
+  color: var(--pulse-color-primary-100, #2b5656);
   margin: 0;
+  line-height: 1;
 }
 
 .rcp__carer-role {
   font-family: Inter, sans-serif;
   font-size: 12px;
-  color: #6c727e;
+  font-weight: 400;
+  color: #51555e;
   margin: 0;
 }
 
-.rcp__review-meta {
-  font-family: Inter, sans-serif;
-  font-size: 11px;
-  color: #9ca3af;
-  margin: 0 0 8px;
-}
-
+/* ── Footer ── */
 .rcp__footer {
   padding-top: 16px;
   border-top: 1px solid var(--pulse-color-neutral-40);

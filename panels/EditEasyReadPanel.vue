@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import PulseDrawer from '@/components/PulseDrawer/PulseDrawer.vue'
 import PulseButton from '@/components/PulseButton/PulseButton.vue'
+import ImageDatabasePanel from './ImageDatabasePanel.vue'
 
 const props = defineProps<{
   sectionTitle: string
@@ -10,18 +11,22 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   close: []
-  save: [lines: string[]]
+  save: [lines: string[], image: { src: string; label: string } | null]
+  viewPage: [page: string]
 }>()
 
 const needName = ref('')
 const imageFile = ref<File | null>(null)
 const imagePreview = ref<string | null>(null)
+const selectedDbImage = ref<{ src: string; label: string } | null>(null)
 const editorRef = ref<HTMLDivElement | null>(null)
+const showImageDatabase = ref(false)
 
 function onImageChange(e: Event) {
   const input = e.target as HTMLInputElement
   const file = input.files?.[0] ?? null
   imageFile.value = file
+  selectedDbImage.value = null
   if (file) {
     const reader = new FileReader()
     reader.onload = (ev) => { imagePreview.value = ev.target?.result as string }
@@ -34,6 +39,14 @@ function onImageChange(e: Event) {
 function removeImage() {
   imageFile.value = null
   imagePreview.value = null
+  selectedDbImage.value = null
+}
+
+function onDbImageSelected(img: { src: string; label: string }) {
+  selectedDbImage.value = img
+  imageFile.value = null
+  imagePreview.value = null
+  showImageDatabase.value = false
 }
 
 function formatBytes(bytes: number) {
@@ -47,7 +60,7 @@ function applyFormat(cmd: string) {
 
 function onSave() {
   const text = editorRef.value?.innerText ?? props.defaultText
-  emit('save', text.split('\n').filter(l => l.trim()))
+  emit('save', text.split('\n').filter(l => l.trim()), selectedDbImage.value)
 }
 </script>
 
@@ -75,26 +88,58 @@ function onSave() {
       <div class="eerp__section">
         <label class="eerp__label">Image</label>
 
-        <div v-if="imagePreview && imageFile" class="eerp__image-row">
+        <!-- Image source options (shown when no image selected) -->
+        <div v-if="!imagePreview && !selectedDbImage" class="eerp__image-options">
+          <label class="eerp__upload-zone">
+            <input type="file" accept="image/*" class="eerp__file-input" @change="onImageChange" />
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" class="eerp__upload-icon">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span class="eerp__upload-label">Click to upload image</span>
+            <span class="eerp__upload-hint">PNG, JPG up to 10MB</span>
+          </label>
+
+          <div class="eerp__or-row">
+            <span class="eerp__or-line" />
+            <span class="eerp__or-text">or</span>
+            <span class="eerp__or-line" />
+          </div>
+
+          <button type="button" class="eerp__browse-btn" @click.stop="showImageDatabase = true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5" stroke="currentColor" stroke-width="2"/>
+              <path d="M21 15l-5-5L5 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            Browse image database
+          </button>
+        </div>
+
+        <!-- Uploaded file preview -->
+        <div v-else-if="imagePreview && imageFile" class="eerp__image-row">
           <img :src="imagePreview" class="eerp__thumb" :alt="imageFile.name" />
           <div class="eerp__image-meta">
             <p class="eerp__image-name">{{ imageFile.name }}</p>
             <p class="eerp__image-size">{{ formatBytes(imageFile.size) }}</p>
-            <button class="eerp__delete-btn" @click="removeImage">
+            <button type="button" class="eerp__delete-btn" @click="removeImage">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
               Delete
             </button>
           </div>
         </div>
 
-        <label v-else class="eerp__upload-zone">
-          <input type="file" accept="image/*" class="eerp__file-input" @change="onImageChange" />
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" class="eerp__upload-icon">
-            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-          </svg>
-          <span class="eerp__upload-label">Click to upload image</span>
-          <span class="eerp__upload-hint">PNG, JPG up to 10MB</span>
-        </label>
+        <!-- Database image preview -->
+        <div v-else-if="selectedDbImage" class="eerp__db-preview">
+          <img :src="selectedDbImage.src" :alt="selectedDbImage.label" class="eerp__db-thumb" />
+          <div class="eerp__image-meta">
+            <p class="eerp__image-name">{{ selectedDbImage.label }}</p>
+            <p class="eerp__image-size">From image database</p>
+            <button type="button" class="eerp__delete-btn" @click="removeImage">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              Remove
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- Easy Read description -->
@@ -135,14 +180,27 @@ function onSave() {
       <PulseButton label="Save" type="primary" :full-width="true" @click="onSave" />
     </div>
   </PulseDrawer>
+
+  <ImageDatabasePanel
+    v-if="showImageDatabase"
+    :section-title="props.sectionTitle"
+    @close="showImageDatabase = false"
+    @select="onDbImageSelected"
+    @view-page="(page) => { emit('viewPage', page) }"
+  />
 </template>
 
 <style scoped>
 .eerp__body {
-  flex: 1;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
+  width: 100%;
+}
+
+.eerp__image-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
 .eerp__section {
@@ -236,10 +294,20 @@ function onSave() {
   color: #9ca3af;
 }
 
-.eerp__image-row {
+.eerp__image-row,
+.eerp__db-preview {
   display: flex;
   gap: 12px;
   align-items: flex-start;
+}
+
+.eerp__db-thumb {
+  width: 72px;
+  height: 72px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid var(--pulse-color-neutral-30);
 }
 
 .eerp__thumb {
@@ -362,6 +430,48 @@ function onSave() {
 }
 
 .eerp__editor:focus { background: #fff; }
+
+.eerp__or-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.eerp__or-line {
+  flex: 1;
+  height: 1px;
+  background: var(--pulse-color-neutral-30);
+}
+
+.eerp__or-text {
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.eerp__browse-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px 16px;
+  border: 1px solid var(--pulse-color-primary-100, #2b5656);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--pulse-color-primary-100, #2b5656);
+  font-family: Inter, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.eerp__browse-btn:hover {
+  background: #e8f5f5;
+}
 
 .eerp__footer {
   display: flex;
